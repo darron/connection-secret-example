@@ -21,7 +21,8 @@ var (
 
 func main() {
 	// Check for Redis configuration and connection.
-	err := redisCheck()
+	var err error
+	Redis, err = redisCheck()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,22 +51,33 @@ func hello(c echo.Context) error {
 }
 
 func redisRoute(c echo.Context) error {
+	// Connect to Redis
+	rdb, err := redisCheck()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+
 	// Get the second we are running at.
 	t := time.Now()
 	second := t.Second()
 	key := fmt.Sprintf("%d", second)
 
+	log.Println(key)
+
 	// See if there's data at that key.
-	val, err := Redis.Get(ctx, key).Result()
+	val, err := rdb.Get(ctx, key).Result()
 	if err != nil {
+		log.Println("got a GET error from Redis:", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	// If not - fake some data and shove it in.
 	if val == "" {
+		log.Println("no value there - adding some")
 		val = "Some faked value"
-		err := Redis.Set(ctx, key, val, 0).Err()
+		err := rdb.Set(ctx, key, val, 0).Err()
 		if err != nil {
+			log.Println("got a SET error from Redis", err.Error())
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
 	}
@@ -73,19 +85,20 @@ func redisRoute(c echo.Context) error {
 	return c.String(http.StatusOK, val)
 }
 
-func redisCheck() error {
+func redisCheck() (*redis.Client, error) {
+	var r *redis.Client
 	redisURL, ok := os.LookupEnv("REDIS_URL")
 	if !ok {
-		return errors.New("must set REDIS_URL")
+		return r, errors.New("must set REDIS_URL")
 	}
 	redisPassword, ok := os.LookupEnv("REDIS_PASSWORD")
 	if !ok {
-		return errors.New("must set REDIS_PASSWORD")
+		return r, errors.New("must set REDIS_PASSWORD")
 	}
-	Redis = redis.NewClient(&redis.Options{
+	r = redis.NewClient(&redis.Options{
 		Addr:     redisURL,
 		Password: redisPassword,
 		DB:       0,
 	})
-	return nil
+	return r, nil
 }
