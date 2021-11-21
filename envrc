@@ -1,0 +1,2 @@
+export REDIS_URL=""
+export REDIS_PASSWORD=""
