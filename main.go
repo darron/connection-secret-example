@@ -89,11 +89,11 @@ func redisRoute(c echo.Context) error {
 		}
 		Redis.Send("SET", key, string(j))
 		// Set a random TTL - throw some randomness into here.
-		randTTL := rand.Intn(120) + 1
+		randTTL := rand.Intn(120) + 10
 		Redis.Send("EXPIRE", key, randTTL, "NX")
 		rerr := Redis.Flush()
 		if rerr != nil {
-			log.Println("got a FLUsH error from Redis", rerr.Error())
+			log.Println("got a FLUSH error from Redis", rerr.Error())
 			return c.String(http.StatusInternalServerError, rerr.Error())
 		}
 		finalVal = string(j)
