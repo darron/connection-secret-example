@@ -11,6 +11,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gomodule/redigo/redis"
+	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -23,7 +24,7 @@ var (
 func main() {
 	// Check for Redis configuration and connection.
 	var err error
-	Redis, err = redisCheck()
+	Redis, err = getRedis()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,6 +38,9 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	// Setup Prometheus metrics.
+	p := prometheus.NewPrometheus("echo", nil)
+	p.Use(e)
 
 	// Routes
 	e.GET("/", hello)
@@ -53,9 +57,9 @@ func hello(c echo.Context) error {
 }
 
 func redisRoute(c echo.Context) error {
-	key := getKey()
+	key := getKey(cc)
 
-	// See if there's data at that key.
+	// See if there's data at that key location
 	val, err := Redis.Do("GET", key)
 	if err != nil {
 		log.Println("got a GET error from Redis:", err.Error())
@@ -66,24 +70,8 @@ func redisRoute(c echo.Context) error {
 
 	// If there's no data - fake some data and shove it in.
 	if val == nil {
-		log.Println("no value there - adding some")
-		j, err := gofakeit.JSON(&gofakeit.JSONOptions{
-			Type: "array",
-			Fields: []gofakeit.Field{
-				{Name: "id", Function: "autoincrement"},
-				{Name: "first_name", Function: "firstname"},
-				{Name: "last_name", Function: "lastname"},
-				{Name: "address", Function: "address"},
-				{Name: "animal", Function: "animal"},
-				{Name: "browser", Function: "chromeuseragent"},
-				{Name: "car", Function: "car"},
-				{Name: "url", Function: "url"},
-				{Name: "uuid", Function: "uuid"},
-				{Name: "password", Function: "password", Params: map[string][]string{"special": {"false"}}},
-			},
-			RowCount: 30,
-			Indent:   true,
-		})
+		log.Println("no data there - adding some fake data")
+		j, err := getFakeData()
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
@@ -104,7 +92,7 @@ func redisRoute(c echo.Context) error {
 	return c.String(http.StatusOK, finalVal)
 }
 
-func redisCheck() (redis.Conn, error) {
+func getRedis() (redis.Conn, error) {
 	var r redis.Conn
 	redisURL, ok := os.LookupEnv("REDIS_URL")
 	if !ok {
@@ -127,10 +115,30 @@ func redisCheck() (redis.Conn, error) {
 	return r, nil
 }
 
-func getKey() string {
+func getKey(cc string) string {
 	// Get the second we are running at.
-	t := time.Now()
-	second := t.Second()
+	second := time.Now().Second()
 	// combine that with the cc we set at startup to give each process 60 different keys.
 	return fmt.Sprintf("%02d-%s", second, cc)
+}
+
+func getFakeData() ([]byte, error) {
+	j, err := gofakeit.JSON(&gofakeit.JSONOptions{
+		Type: "array",
+		Fields: []gofakeit.Field{
+			{Name: "id", Function: "autoincrement"},
+			{Name: "first_name", Function: "firstname"},
+			{Name: "last_name", Function: "lastname"},
+			{Name: "address", Function: "address"},
+			{Name: "animal", Function: "animal"},
+			{Name: "browser", Function: "chromeuseragent"},
+			{Name: "car", Function: "car"},
+			{Name: "url", Function: "url"},
+			{Name: "uuid", Function: "uuid"},
+			{Name: "password", Function: "password", Params: map[string][]string{"special": {"false"}}},
+		},
+		RowCount: 30,
+		Indent:   true,
+	})
+	return j, err
 }
