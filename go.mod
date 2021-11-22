@@ -3,6 +3,7 @@ module github.com/darron/connection-secret-example
 go 1.17
 
 require (
+	github.com/brianvoe/gofakeit/v6 v6.9.0
 	github.com/gomodule/redigo v1.8.5
 	github.com/labstack/echo/v4 v4.6.1
 )

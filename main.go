@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -9,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gomodule/redigo/redis"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -16,7 +16,6 @@ import (
 
 var (
 	Redis redis.Conn
-	ctx   context.Context
 )
 
 func main() {
@@ -26,8 +25,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	ctx = context.Background()
 
 	// Echo instance
 	e := echo.New()
@@ -74,13 +71,33 @@ func redisRoute(c echo.Context) error {
 	// If there's no data - fake some data and shove it in.
 	if val == nil {
 		log.Println("no value there - adding some")
-		finalVal = "Some faked value"
-		err := rdb.Send("SET", key, finalVal)
+		j, err := gofakeit.JSON(&gofakeit.JSONOptions{
+			Type: "array",
+			Fields: []gofakeit.Field{
+				{Name: "id", Function: "autoincrement"},
+				{Name: "first_name", Function: "firstname"},
+				{Name: "last_name", Function: "lastname"},
+				{Name: "address", Function: "address"},
+				{Name: "animal", Function: "animal"},
+				{Name: "browser", Function: "chromeuseragent"},
+				{Name: "car", Function: "car"},
+				{Name: "url", Function: "url"},
+				{Name: "uuid", Function: "uuid"},
+				{Name: "password", Function: "password", Params: map[string][]string{"special": {"false"}}},
+			},
+			RowCount: 30,
+			Indent:   true,
+		})
 		if err != nil {
-			log.Println("got a SET error from Redis", err.Error())
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
+		rerr := rdb.Send("SET", key, string(j))
+		if rerr != nil {
+			log.Println("got a SET error from Redis", rerr.Error())
+			return c.String(http.StatusInternalServerError, rerr.Error())
+		}
 		rdb.Flush()
+		finalVal = string(j)
 	} else {
 		finalVal = fmt.Sprintf("%s", val)
 	}
