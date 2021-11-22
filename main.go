@@ -9,13 +9,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/gomodule/redigo/redis"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 var (
-	Redis *redis.Client
+	Redis redis.Conn
 	ctx   context.Context
 )
 
@@ -62,43 +62,55 @@ func redisRoute(c echo.Context) error {
 	second := t.Second()
 	key := fmt.Sprintf("%d", second)
 
-	log.Println(key)
-
 	// See if there's data at that key.
-	val, err := rdb.Get(ctx, key).Result()
+	val, err := rdb.Do("GET", key)
 	if err != nil {
 		log.Println("got a GET error from Redis:", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
-	// If not - fake some data and shove it in.
-	if val == "" {
+	var finalVal string
+
+	// If there's no data - fake some data and shove it in.
+	if val == nil {
 		log.Println("no value there - adding some")
-		val = "Some faked value"
-		err := rdb.Set(ctx, key, val, 0).Err()
+		finalVal = "Some faked value"
+		err := rdb.Send("SET", key, finalVal)
 		if err != nil {
 			log.Println("got a SET error from Redis", err.Error())
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
+		rdb.Flush()
+	} else {
+		finalVal = fmt.Sprintf("%s", val)
 	}
 
-	return c.String(http.StatusOK, val)
+	return c.String(http.StatusOK, finalVal)
 }
 
-func redisCheck() (*redis.Client, error) {
-	var r *redis.Client
+func redisCheck() (redis.Conn, error) {
+	var r redis.Conn
 	redisURL, ok := os.LookupEnv("REDIS_URL")
 	if !ok {
+		log.Println("REDIS_URL problem")
 		return r, errors.New("must set REDIS_URL")
 	}
 	redisPassword, ok := os.LookupEnv("REDIS_PASSWORD")
 	if !ok {
+		log.Println("REDIS_PASSWORD problem")
 		return r, errors.New("must set REDIS_PASSWORD")
 	}
-	r = redis.NewClient(&redis.Options{
-		Addr:     redisURL,
-		Password: redisPassword,
-		DB:       0,
-	})
+	r, err := redis.Dial("tcp", redisURL)
+	if err != nil {
+		log.Println("redis.Dial problem")
+		return r, err
+	}
+	if redisPassword != "" {
+		if _, err := r.Do("AUTH", redisPassword); err != nil {
+			log.Println("redis AUTH problem")
+			r.Close()
+			return r, err
+		}
+	}
 	return r, nil
 }
