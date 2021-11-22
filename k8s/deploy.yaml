@@ -5,8 +5,8 @@ metadata:
   labels:
     app: rtest
   annotations:
-    prometheus.io/port: 1323
-    prometheus.io/scrape: true
+    prometheus.io/port: "1323"
+    prometheus.io/scrape: "true"
 spec:
   replicas: 3
   selector:
@@ -23,24 +23,24 @@ spec:
         env:
         - name: REDIS_URL
           valueFrom:
-          secretKeyRef:
-            name: rtest
-            key: url
+            secretKeyRef:
+              name: rtest
+              key: url
         - name: REDIS_PASSWORD
           valueFrom:
-          secretKeyRef:
-            name: rtest
-            key: password
+            secretKeyRef:
+              name: rtest
+              key: password
         - name: REDIS_CLIENT_USE_TLS
           valueFrom:
-          secretKeyRef:
-            name: rtest
-            key: use_tls
+            secretKeyRef:
+              name: rtest
+              key: use_tls
         ports:
         - containerPort: 1323
         livenessProbe:
-        httpGet:
-          path: /healthz
-          port: 1323
-        initialDelaySeconds: 3
-        periodSeconds: 3
+          httpGet:
+            path: /healthz
+            port: 1323
+          initialDelaySeconds: 3
+          periodSeconds: 3
