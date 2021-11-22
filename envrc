@@ -1,2 +1,4 @@
-export REDIS_URL=""
+export REDIS_URL="127.0.0.1:6379"
 export REDIS_PASSWORD=""
+# export REDIS_CLIENT_USE_TLS="true"
+# export REDIS_URL="127.0.0.1:6380" # TLS Port

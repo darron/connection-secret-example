@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -95,6 +96,8 @@ func redisRoute(c echo.Context) error {
 
 func getRedis() (redis.Conn, error) {
 	var r redis.Conn
+	var err error
+
 	redisURL, ok := os.LookupEnv("REDIS_URL")
 	if !ok {
 		return r, errors.New("must set REDIS_URL")
@@ -103,7 +106,19 @@ func getRedis() (redis.Conn, error) {
 	if !ok {
 		return r, errors.New("must set REDIS_PASSWORD")
 	}
-	r, err := redis.Dial("tcp", redisURL)
+	// Let's check for TLS - we dial differently if it's enabled.
+	redisTLSEnabled, _ := os.LookupEnv("REDIS_CLIENT_USE_TLS")
+	if redisTLSEnabled == "true" {
+		// Yes - this is insecure - this is just a demo application.
+		// Don't do this in real life.
+		clientTLSConfig := &tls.Config{InsecureSkipVerify: true}
+		r, err = redis.Dial("tcp", redisURL,
+			redis.DialTLSConfig(clientTLSConfig),
+			redis.DialUseTLS(true))
+	} else {
+		r, err = redis.Dial("tcp", redisURL)
+	}
+
 	if err != nil {
 		return r, fmt.Errorf("redis.Dial problem: %w", err)
 	}
