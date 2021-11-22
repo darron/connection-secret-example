@@ -24,8 +24,14 @@ TODO:
 
 - [x] Test with Redis Password
 - [x] Test with Redis TLS Connection
-- [ ] Kubernetes Secret
-- [ ] Kubernetes Deploy - healthz - annotations for Prometheus.
-- [ ] Kubernetes Service
+- [x] Kubernetes Secret
+- [x] Kubernetes Deploy - healthz - annotations for Prometheus.
+- [x] Kubernetes Service
+- [x] Install Prometheus
+- [x] Install Grafana
 - [ ] Using Kustomize so we can deploy multiple copies of renamed services.
-- [ ] Monitored with Prometheus
+- [ ] Pods Monitored with Prometheus
+- [ ] Redis Monitored with Prometheus
+- [ ] Redis Cluster from Redis Labs
+- [ ] Metrics from Redis Labs
+- [ ] Demonstrate move from one cluster to another with metrics.
