@@ -25,7 +25,7 @@ TODO:
 - [x] Test with Redis Password
 - [x] Test with Redis TLS Connection
 - [ ] Kubernetes Secret
-- [ ] Kubernetes Deploy
+- [ ] Kubernetes Deploy - healthz - annotations for Prometheus.
 - [ ] Kubernetes Service
 - [ ] Using Kustomize so we can deploy multiple copies of renamed services.
 - [ ] Monitored with Prometheus
