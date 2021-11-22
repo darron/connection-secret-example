@@ -22,7 +22,7 @@ Drawbacks?
 
 TODO:
 
-- [ ] Test with Redis Password
+- [x] Test with Redis Password
 - [ ] Test with Redis TLS Connection
 - [ ] Kubernetes Secret
 - [ ] Kubernetes Deploy
