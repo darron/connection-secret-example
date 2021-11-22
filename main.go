@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -16,6 +17,7 @@ import (
 
 var (
 	Redis redis.Conn
+	cc    string
 )
 
 func main() {
@@ -25,6 +27,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Set consistent somwehat random value for the life of this process.
+	cc = gofakeit.CreditCardNumber(&gofakeit.CreditCardOptions{Types: []string{"visa", "discover"}})
 
 	// Echo instance
 	e := echo.New()
@@ -48,19 +53,10 @@ func hello(c echo.Context) error {
 }
 
 func redisRoute(c echo.Context) error {
-	// Connect to Redis
-	rdb, err := redisCheck()
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
-	}
-
-	// Get the second we are running at.
-	t := time.Now()
-	second := t.Second()
-	key := fmt.Sprintf("%d", second)
+	key := getKey()
 
 	// See if there's data at that key.
-	val, err := rdb.Do("GET", key)
+	val, err := Redis.Do("GET", key)
 	if err != nil {
 		log.Println("got a GET error from Redis:", err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
@@ -91,12 +87,15 @@ func redisRoute(c echo.Context) error {
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
-		rerr := rdb.Send("SET", key, string(j))
+		Redis.Send("SET", key, string(j))
+		// Set a random TTL - throw some randomness into here.
+		randTTL := rand.Intn(120) + 1
+		Redis.Send("EXPIRE", key, randTTL, "NX")
+		rerr := Redis.Flush()
 		if rerr != nil {
-			log.Println("got a SET error from Redis", rerr.Error())
+			log.Println("got a FLUsH error from Redis", rerr.Error())
 			return c.String(http.StatusInternalServerError, rerr.Error())
 		}
-		rdb.Flush()
 		finalVal = string(j)
 	} else {
 		finalVal = fmt.Sprintf("%s", val)
@@ -130,4 +129,12 @@ func redisCheck() (redis.Conn, error) {
 		}
 	}
 	return r, nil
+}
+
+func getKey() string {
+	// Get the second we are running at.
+	t := time.Now()
+	second := t.Second()
+	// combine that with the cc we set at startup to give each process 60 different keys.
+	return fmt.Sprintf("%02d-%s", second, cc)
 }
