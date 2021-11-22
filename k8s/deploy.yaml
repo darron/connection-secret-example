@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: rtest
-        image: darron/connection-secret-example:latest
+        image: darron/connection-secret-example@sha256:f1f16a827c5887308a9c5d81e3cbc0cef9e404e3dc43d657ac257357d7ddcb89
         env:
         - name: REDIS_URL
           valueFrom:
