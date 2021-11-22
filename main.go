@@ -45,6 +45,7 @@ func main() {
 	// Routes
 	e.GET("/", hello)
 	e.GET("/redis", redisRoute)
+	e.GET("/healthz", healthz)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
@@ -141,4 +142,13 @@ func getFakeData() ([]byte, error) {
 		Indent:   true,
 	})
 	return j, err
+}
+
+func healthz(c echo.Context) error {
+	Redis.Send("PING")
+	err := Redis.Flush()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, fmt.Sprintf("Redis PING Error: %s", err))
+	}
+	return c.String(http.StatusOK, "OK")
 }
