@@ -19,3 +19,13 @@ Drawbacks?
 
 1. A single secret change can affect multiple applications.
 2. If a secret is deployed, the affected applications aren't automatically restarted.
+
+TODO:
+
+- [ ] Test with Redis Password
+- [ ] Test with Redis TLS Connection
+- [ ] Kubernetes Secret
+- [ ] Kubernetes Deploy
+- [ ] Kubernetes Service
+- [ ] Using Kustomize so we can deploy multiple copies of renamed services.
+- [ ] Monitored with Prometheus
