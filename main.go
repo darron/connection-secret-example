@@ -108,24 +108,20 @@ func redisCheck() (redis.Conn, error) {
 	var r redis.Conn
 	redisURL, ok := os.LookupEnv("REDIS_URL")
 	if !ok {
-		log.Println("REDIS_URL problem")
 		return r, errors.New("must set REDIS_URL")
 	}
 	redisPassword, ok := os.LookupEnv("REDIS_PASSWORD")
 	if !ok {
-		log.Println("REDIS_PASSWORD problem")
 		return r, errors.New("must set REDIS_PASSWORD")
 	}
 	r, err := redis.Dial("tcp", redisURL)
 	if err != nil {
-		log.Println("redis.Dial problem")
-		return r, err
+		return r, fmt.Errorf("redis.Dial problem: %w", err)
 	}
 	if redisPassword != "" {
 		if _, err := r.Do("AUTH", redisPassword); err != nil {
-			log.Println("redis AUTH problem")
 			r.Close()
-			return r, err
+			return r, fmt.Errorf("redis AUTH problem: %w", err)
 		}
 	}
 	return r, nil
