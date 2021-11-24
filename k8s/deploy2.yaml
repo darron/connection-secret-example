@@ -8,12 +8,13 @@ metadata:
     prometheus.io/port: "1323"
     prometheus.io/scrape: "true"
 spec:
+  minReadySeconds: 10
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
-      maxSurge: 2
-  replicas: 3
+      maxSurge: 1
+  replicas: 10
   selector:
     matchLabels:
       app: rtest2
@@ -49,3 +50,15 @@ spec:
             port: 1323
           initialDelaySeconds: 3
           periodSeconds: 3
+        readinessProbe:
+          initialDelaySeconds: 3
+          periodSeconds: 2
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 1
+          httpGet:
+            host:
+            scheme: HTTP
+            path: /healthz
+            port: 1323
+
