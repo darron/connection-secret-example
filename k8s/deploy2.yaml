@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtest2
+  labels:
+    app: rtest2
+  annotations:
+    prometheus.io/port: "1323"
+    prometheus.io/scrape: "true"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rtest2
+  template:
+    metadata:
+      labels:
+        app: rtest2
+    spec:
+      containers:
+      - name: rtest2
+        image: darron/connection-secret-example@sha256:f1f16a827c5887308a9c5d81e3cbc0cef9e404e3dc43d657ac257357d7ddcb89
+        env:
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: rtest
+              key: url
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rtest
+              key: password
+        - name: REDIS_CLIENT_USE_TLS
+          valueFrom:
+            secretKeyRef:
+              name: rtest
+              key: use_tls
+        ports:
+        - containerPort: 1323
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 1323
+          initialDelaySeconds: 3
+          periodSeconds: 3

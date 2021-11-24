@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hit2
+  labels:
+    app: hit2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hit2
+  template:
+    metadata:
+      labels:
+        app: hit2
+    spec:
+      containers:
+      - name: hit2
+        image: darron/connection-secret-example:hit22
+        imagePullPolicy: Always

@@ -1,0 +1,6 @@
+FROM alpine:latest
+
+RUN apk update && apk add curl
+ADD hit2.sh /usr/local/bin/hit2.sh
+
+ENTRYPOINT ["/bin/sh", "-c", "/usr/local/bin/hit2.sh"]
