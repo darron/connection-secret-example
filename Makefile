@@ -106,4 +106,4 @@ redis.crt: openssl.cnf ca.key ca.crt redis.csr
 		-CAcreateserial \
 		-out ${OUTDIR}/redis.crt
 
-.PHONY: help all deps clean build gzip release unit lint redis generate prepare cleancerts
+.PHONY: help all deps clean build gzip release unit lint redis generate prepare cleancerts docker
